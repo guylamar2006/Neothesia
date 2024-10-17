@@ -12,8 +12,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - uses: dtolnay/rust-toolchain@stable
         with:
-          command: build
-          args: --release 
+          toolchain: stable
+          run: cargo build --release
       - name: Chmod +x
         run: chmod +x target/release/neothesia
       - name: zip binary
@@ -29,8 +29,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - uses: dtolnay/rust-toolchain@stable
         with:
-          command: build
-          args: --release 
+          toolchain: stable
+          run: cargo build --release
       - uses: actions/upload-artifact@v4
         with:
           name: windows-artifact
@@ -42,8 +42,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - uses: dtolnay/rust-toolchain@stable
         with:
-          command: build
-          args: --release 
+          toolchain: stable
+          run: cargo build --release
       - name: copy binary
         run: cp target/release/neothesia .github/app/Neothesia.app/Contents/MacOS
       - name: zip binary
@@ -62,8 +62,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - uses: dtolnay/rust-toolchain@stable
         with:
-          command: build
-          args: --release -p neothesia-cli
+          toolchain: stable
+          command: cargo build --release -p neothesia-cli
       - name: Chmod +x
         run: chmod +x target/release/neothesia-cli
       - name: zip binary
@@ -96,8 +96,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - uses: dtolnay/rust-toolchain@stable
         with:
-          command: build
-          args: --release -p neothesia-cli
+          toolchain: stable
+          command: cargo build --release -p neothesia-cli
       - uses: actions/upload-artifact@v4
         with:
           name: windows-recorder-artifact
