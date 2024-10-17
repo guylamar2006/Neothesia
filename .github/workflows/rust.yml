@@ -10,7 +10,7 @@ jobs:
       - name: Install alsa
         run: sudo apt update && sudo apt install libasound2-dev libgtk-3-dev
       - uses: Swatinem/rust-cache@v2
-      - uses: actions-rs/cargo@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
           command: build
           args: --release 
@@ -27,7 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
-      - uses: actions-rs/cargo@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
           command: build
           args: --release 
@@ -40,7 +40,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
-      - uses: actions-rs/cargo@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
           command: build
           args: --release 
@@ -60,7 +60,7 @@ jobs:
       - name: Install alsa
         run: sudo apt update && sudo apt install libasound2-dev libgtk-3-dev libavcodec-dev libavformat-dev libswscale-dev
       - uses: Swatinem/rust-cache@v2
-      - uses: actions-rs/cargo@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
           command: build
           args: --release -p neothesia-cli
@@ -94,7 +94,7 @@ jobs:
           Add-Content $env:GITHUB_PATH "${pwd}\ffmpeg\bin`n"
 
       - uses: Swatinem/rust-cache@v2
-      - uses: actions-rs/cargo@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
           command: build
           args: --release -p neothesia-cli
