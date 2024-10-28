@@ -4,6 +4,7 @@ on:
   push:
     branches:    
       - master
+      - update-crates
   pull_request:
 
 jobs:
