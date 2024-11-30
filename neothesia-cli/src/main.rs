@@ -1,9 +1,9 @@
-use std::{default::Default, time::Duration};
+use std::{default::Default, time::Duration, process::Command};
 use neothesia_core::{
     config::Config,
     piano_layout,
     render::{GuidelineRenderer, KeyboardRenderer, QuadPipeline, TextRenderer, WaterfallRenderer},
-    synth::Synthesizer,  // Add this import
+    synth::Synthesizer,
 };
 use wgpu_jumpstart::{wgpu, Gpu, TransformUniform, Uniform};
 
@@ -12,7 +12,7 @@ struct Recorder {
     transform_uniform: Uniform<TransformUniform>,
 
     playback: midi_file::PlaybackState,
-    synth: Option<Synthesizer>,  // Add this field
+    synth: Option<Synthesizer>,
 
     quad_pipeline: QuadPipeline,
     keyboard: KeyboardRenderer,
@@ -140,7 +140,7 @@ impl Recorder {
             transform_uniform,
 
             playback,
-            synth,  // Add this field
+            synth,
 
             quad_pipeline,
             keyboard,
@@ -251,6 +251,16 @@ impl Recorder {
 
 fn main() {
     let mut recorder = Recorder::new();
+    
+    // Create WAV writer for audio output
+    let spec = hound::WavSpec {
+        channels: 2,
+        sample_rate: 44100,
+        bits_per_sample: 16,
+        sample_format: hound::SampleFormat::Int,
+    };
+    let mut wav_writer = hound::WavWriter::create("./out/audio.wav", spec)
+        .expect("Failed to create WAV file");
 
     let texture_desc = wgpu::TextureDescriptor {
         size: wgpu::Extent3d {
@@ -290,10 +300,10 @@ fn main() {
 
     std::fs::create_dir("./out").ok();
     let mut encoder = mpeg_encoder::Encoder::new(
-        "./out/video.mp4",
+        "./out/video_temp.mp4", // Temporary video without audio
         recorder.width as usize,
         recorder.height as usize,
-        Some(44100.0),  // Add audio sample rate
+        None, // No audio in this file
         Some("medium"),
     );
 
@@ -308,10 +318,14 @@ fn main() {
         recorder.update(frame_time);
         recorder.render(&texture, view, &texture_desc, &output_buffer);
 
-        // Render audio if synthesizer is available
+        // Write audio samples if synthesizer is available
         if let Some(synth) = &mut recorder.synth {
             let audio_buffer = synth.render_audio(frame_time);
-            encoder.encode_audio(&audio_buffer);
+            // Convert f32 samples to i16 and write to WAV
+            for &sample in audio_buffer.iter() {
+                let sample_i16 = (sample * 32767.0) as i16;
+                wav_writer.write_sample(sample_i16).unwrap();
+            }
         }
 
         {
@@ -336,6 +350,25 @@ fn main() {
 
         n += 1;
     }
+
+    // Finalize WAV file
+    wav_writer.finalize().unwrap();
+
+    // Combine video and audio using ffmpeg
+    Command::new("ffmpeg")
+        .args([
+            "-i", "./out/video_temp.mp4",
+            "-i", "./out/audio.wav",
+            "-c:v", "copy",
+            "-c:a", "aac",
+            "./out/video.mp4"
+        ])
+        .status()
+        .expect("Failed to combine video and audio");
+
+    // Clean up temporary files
+    std::fs::remove_file("./out/video_temp.mp4").ok();
+    std::fs::remove_file("./out/audio.wav").ok();
 }
 
 fn file_midi_events(
