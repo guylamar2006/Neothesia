@@ -68,7 +68,7 @@ impl Recorder {
             })
         } else {
             eprintln!("No MIDI file provided.");
-            eprintln!("Usage: neothesia-cli <midi-file> [sf2-file]");
+            eprintln!("Usage: neothesia-cli <midi-file> <sf2-file>");
             std::process::exit(1);
         };
 
@@ -341,6 +341,7 @@ fn main() {
                 "-c:v", "copy",
                 "-c:a", "aac",
                 "-strict", "experimental",
+                "-shortest", // Ensure the output duration matches the shorter of the two inputs
                 "./out/final_video.mp4",
             ])
             .output()
