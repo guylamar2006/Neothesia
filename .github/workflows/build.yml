@@ -3,7 +3,7 @@ name: Build
 on: 
   push:
     branches:    
-      - master
+      - neothesia-cli-sf2
   pull_request:
 
 jobs:
