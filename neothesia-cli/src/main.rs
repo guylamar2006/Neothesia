@@ -1,10 +1,9 @@
 use std::{default::Default, time::Duration};
-use std::process::Command;
-
 use neothesia_core::{
     config::Config,
     piano_layout,
     render::{GuidelineRenderer, KeyboardRenderer, QuadPipeline, TextRenderer, WaterfallRenderer},
+    synth::Synthesizer,  // Add this import
 };
 use wgpu_jumpstart::{wgpu, Gpu, TransformUniform, Uniform};
 
@@ -13,6 +12,7 @@ struct Recorder {
     transform_uniform: Uniform<TransformUniform>,
 
     playback: midi_file::PlaybackState,
+    synth: Option<Synthesizer>,  // Add this field
 
     quad_pipeline: QuadPipeline,
     keyboard: KeyboardRenderer,
@@ -61,38 +61,29 @@ impl Recorder {
         });
         let args: Vec<String> = std::env::args().collect();
 
-        let midi = if args.len() > 1 {
-            midi_file::MidiFile::new(&args[1]).unwrap_or_else(|err| {
-                eprintln!("Error loading MIDI file: {}", err);
-                std::process::exit(1);
-            })
+        if args.len() < 2 {
+            eprintln!("Usage: neothesia-cli <midi-file> <soundfont-file>");
+            std::process::exit(1);
+        }
+
+        let midi = midi_file::MidiFile::new(&args[1]).unwrap_or_else(|err| {
+            eprintln!("Error loading MIDI file: {}", err);
+            std::process::exit(1);
+        });
+
+        // Initialize synthesizer with SF2 if provided
+        let synth = if args.len() > 2 {
+            match Synthesizer::new_with_soundfont(&args[2]) {
+                Ok(synth) => Some(synth),
+                Err(err) => {
+                    eprintln!("Error loading soundfont: {}", err);
+                    std::process::exit(1);
+                }
+            }
         } else {
-            eprintln!("No MIDI file provided.");
-            eprintln!("Usage: neothesia-cli <midi-file> <sf2-file>");
+            eprintln!("No soundfont specified. Audio will not be rendered.");
             std::process::exit(1);
         };
-
-        let sf2_file = if args.len() > 2 {
-            Some(args[2].clone())
-        } else {
-            None
-        };
-
-        if let Some(sf2) = &sf2_file {
-            let output = Command::new("fluidsynth")
-                .arg("-ni")
-                .arg(sf2)
-                .arg(&args[1])
-                .arg("-F")
-                .arg("output.wav")
-                .output()
-                .expect("Failed to execute fluidsynth");
-
-            if !output.status.success() {
-                eprintln!("Fluidsynth error: {}", String::from_utf8_lossy(&output.stderr));
-                std::process::exit(1);
-            }
-        }
 
         let config = Config::new();
 
@@ -149,6 +140,7 @@ impl Recorder {
             transform_uniform,
 
             playback,
+            synth,  // Add this field
 
             quad_pipeline,
             keyboard,
@@ -165,6 +157,13 @@ impl Recorder {
     fn update(&mut self, delta: Duration) {
         let events = self.playback.update(delta);
         file_midi_events(&mut self.keyboard, &self.config, &events);
+
+        // Update synthesizer with MIDI events
+        if let Some(synth) = &mut self.synth {
+            for event in events {
+                synth.process_midi_event(event);
+            }
+        }
 
         let time = time_without_lead_in(&self.playback);
 
@@ -294,7 +293,7 @@ fn main() {
         "./out/video.mp4",
         recorder.width as usize,
         recorder.height as usize,
-        Some(0.0),
+        Some(44100.0),  // Add audio sample rate
         Some("medium"),
     );
 
@@ -308,6 +307,12 @@ fn main() {
         let frame_time = Duration::from_secs(1) / 60;
         recorder.update(frame_time);
         recorder.render(&texture, view, &texture_desc, &output_buffer);
+
+        // Render audio if synthesizer is available
+        if let Some(synth) = &mut recorder.synth {
+            let audio_buffer = synth.render_audio(frame_time);
+            encoder.encode_audio(&audio_buffer);
+        }
 
         {
             let slice = output_buffer.slice(..);
@@ -330,27 +335,6 @@ fn main() {
         }
 
         n += 1;
-    }
-
-    if std::path::Path::new("output.wav").exists() {
-        println!("Adding audio to video...");
-        Command::new("ffmpeg")
-            .args(&[
-                "-i", "./out/video.mp4",
-                "-i", "output.wav",
-                "-c:v", "copy",
-                "-c:a", "aac",
-                "-strict", "experimental",
-                "-shortest", // Ensure the output duration matches the shorter of the two inputs
-                "./out/final_video.mp4",
-            ])
-            .output()
-            .expect("Failed to execute ffmpeg");
-        println!("Audio added to video: ./out/final_video.mp4");
-
-        // Clean up input files
-        std::fs::remove_file("output.wav").expect("Failed to delete output.wav");
-        std::fs::remove_file("./out/video.mp4").expect("Failed to delete video.mp4");
     }
 }
 
