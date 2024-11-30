@@ -1,4 +1,5 @@
 use std::{default::Default, time::Duration};
+use std::process::Command;
 
 use neothesia_core::{
     config::Config,
@@ -67,9 +68,31 @@ impl Recorder {
             })
         } else {
             eprintln!("No MIDI file provided.");
-            eprintln!("Usage: neothesia-cli <midi-file>");
+            eprintln!("Usage: neothesia-cli <midi-file> [sf2-file]");
             std::process::exit(1);
         };
+
+        let sf2_file = if args.len() > 2 {
+            Some(args[2].clone())
+        } else {
+            None
+        };
+
+        if let Some(sf2) = &sf2_file {
+            let output = Command::new("fluidsynth")
+                .arg("-ni")
+                .arg(sf2)
+                .arg(&args[1])
+                .arg("-F")
+                .arg("output.wav")
+                .output()
+                .expect("Failed to execute fluidsynth");
+
+            if !output.status.success() {
+                eprintln!("Fluidsynth error: {}", String::from_utf8_lossy(&output.stderr));
+                std::process::exit(1);
+            }
+        }
 
         let config = Config::new();
 
@@ -307,6 +330,26 @@ fn main() {
         }
 
         n += 1;
+    }
+
+    if std::path::Path::new("output.wav").exists() {
+        println!("Adding audio to video...");
+        Command::new("ffmpeg")
+            .args(&[
+                "-i", "./out/video.mp4",
+                "-i", "output.wav",
+                "-c:v", "copy",
+                "-c:a", "aac",
+                "-strict", "experimental",
+                "./out/final_video.mp4",
+            ])
+            .output()
+            .expect("Failed to execute ffmpeg");
+        println!("Audio added to video: ./out/final_video.mp4");
+
+        // Clean up input files
+        std::fs::remove_file("output.wav").expect("Failed to delete output.wav");
+        std::fs::remove_file("./out/video.mp4").expect("Failed to delete video.mp4");
     }
 }
 
