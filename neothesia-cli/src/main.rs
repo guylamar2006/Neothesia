@@ -1,4 +1,4 @@
-use std::{default::Default, time::Duration};
+use std::{default::Default, time::Duration, path::PathBuf};
 
 use neothesia_core::{
     config::Config,
@@ -60,18 +60,26 @@ impl Recorder {
         });
         let args: Vec<String> = std::env::args().collect();
 
-        let midi = if args.len() > 1 {
-            midi_file::MidiFile::new(&args[1]).unwrap_or_else(|err| {
-                eprintln!("Error loading MIDI file: {}", err);
+        let (midi_path, soundfont_path) = match args.len() {
+            2 => (args[1].clone(), None),
+            3 => (args[1].clone(), Some(PathBuf::from(&args[2]))),
+            _ => {
+                eprintln!("Usage: neothesia-cli <midi-file> <soundfont-file>");
+                eprintln!("  midi-file: Path to the MIDI file to render");
+                eprintln!("  soundfont-file: Optional path to a custom soundfont file (sf2, sf3, or dls format)");
                 std::process::exit(1);
-            })
-        } else {
-            eprintln!("No MIDI file provided.");
-            eprintln!("Usage: neothesia-cli <midi-file>");
-            std::process::exit(1);
+            }
         };
 
-        let config = Config::new();
+        let midi = midi_file::MidiFile::new(&midi_path).unwrap_or_else(|err| {
+            eprintln!("Error loading MIDI file: {}", err);
+            std::process::exit(1);
+        });
+
+        let mut config = Config::new();
+        if let Some(sf_path) = soundfont_path {
+            config.set_soundfont_path(Some(sf_path));
+        }
 
         let width = 1920;
         let height = 1080;
