@@ -1,14 +1,14 @@
-name: Ubuntu Recorder
-description: Build ubuntu recorder builds
+name: Arch Recorder
+description: Build Arch Linux recorder builds
 runs:
   using: "composite"
   steps:
     - name: Install alsa
       shell: bash
-      run: sudo apt update && sudo apt install libasound2-dev libgtk-3-dev libavcodec-dev libavformat-dev libswscale-dev
+      run: sudo pacman -Syu --noconfirm && sudo pacman -S --noconfirm alsa-lib gtk3 ffmpeg
     - uses: Swatinem/rust-cache@v2
     - uses: dtolnay/rust-toolchain@stable
-    - name: Build Ubuntu Recorder Release
+    - name: Build Arch Recorder Release
       shell: bash
       run: cargo build --release -p neothesia-cli
     - name: Chmod +x
@@ -19,5 +19,5 @@ runs:
       run: zip -rj app.zip target/release/neothesia-cli
     - uses: actions/upload-artifact@v4
       with:
-        name: ubuntu-recorder-artifact
+        name: arch-recorder-artifact
         path: app.zip
