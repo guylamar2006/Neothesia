@@ -405,6 +405,8 @@ fn file_midi_events(
             _ => continue,
         };
 
+    let channel = e.channel;
+
         if is_on {
             synth
                 .send_event(oxisynth::MidiEvent::NoteOn {
