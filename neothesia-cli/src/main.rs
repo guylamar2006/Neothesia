@@ -408,14 +408,14 @@ fn file_midi_events(
         if is_on {
             synth
                 .send_event(oxisynth::MidiEvent::NoteOn {
-                    channel: 1,
+                    channel,
                     key,
                     vel: vel.as_int(),
                 })
                 .ok();
         } else {
             synth
-                .send_event(oxisynth::MidiEvent::NoteOff { channel: 1, key })
+                .send_event(oxisynth::MidiEvent::NoteOff { channel, key })
                 .ok();
         }
 
