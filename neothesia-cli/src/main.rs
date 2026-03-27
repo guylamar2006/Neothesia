@@ -471,21 +471,13 @@ fn file_midi_events(
             }
 
             MidiMessage::PitchBend { bend } => {
-                // midly gives 14-bit pitch bend (0..16383), center=8192
                 let _ = synth.send_event(oxisynth::MidiEvent::PitchBend {
                     channel,
-                    value: bend.as_int(),
+                    value: bend.as_int() as u16,
                 });
             }
 
-            MidiMessage::Aftertouch { vel } => {
-                let _ = synth.send_event(oxisynth::MidiEvent::ChannelPressure {
-                    channel,
-                    value: vel.as_int(),
-                });
-            }
-
-            MidiMessage::KeyAftertouch { key, vel } => {
+            MidiMessage::Aftertouch { key, vel } => {
                 let _ = synth.send_event(oxisynth::MidiEvent::PolyphonicKeyPressure {
                     channel,
                     key: key.as_int(),
