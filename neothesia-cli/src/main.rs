@@ -129,6 +129,8 @@ impl Recorder {
             synth.add_font(font, true);
         }
 
+        reset_synth_state(&mut synth);
+        
         let note_labels = config.note_labels().then_some(NoteLabels::new(
             *keyboard.pos(),
             waterfall.notes(),
@@ -388,6 +390,57 @@ fn main() {
     }
 
     encoder(ffmpeg_encoder::Frame::Terminator);
+}
+
+fn reset_synth_state(synth: &mut oxisynth::Synth) {
+    // GM-style sane initialization for all 16 MIDI channels.
+    // Channel 9 (10th channel) is typically drums in GM.
+    for channel in 0u8..16 {
+        // All Notes Off + sustain off + all sound off
+        let _ = synth.send_event(oxisynth::MidiEvent::ControlChange {
+            channel,
+            ctrl: 64,   // Sustain
+            value: 0,
+        });
+        let _ = synth.send_event(oxisynth::MidiEvent::ControlChange {
+            channel,
+            ctrl: 123,  // All Notes Off
+            value: 0,
+        });
+        let _ = synth.send_event(oxisynth::MidiEvent::ControlChange {
+            channel,
+            ctrl: 120,  // All Sound Off
+            value: 0,
+        });
+
+        // Reset all controllers
+        let _ = synth.send_event(oxisynth::MidiEvent::ControlChange {
+            channel,
+            ctrl: 121,
+            value: 0,
+        });
+
+        // Common defaults
+        let _ = synth.send_event(oxisynth::MidiEvent::ControlChange { channel, ctrl: 7, value: 100 });   // Volume
+        let _ = synth.send_event(oxisynth::MidiEvent::ControlChange { channel, ctrl: 10, value: 64 });   // Pan
+        let _ = synth.send_event(oxisynth::MidiEvent::ControlChange { channel, ctrl: 11, value: 127 });  // Expression
+        let _ = synth.send_event(oxisynth::MidiEvent::ControlChange { channel, ctrl: 1, value: 0 });     // Mod wheel
+
+        // Pitch bend center
+        let _ = synth.send_event(oxisynth::MidiEvent::PitchBend { channel, value: 8192 });
+
+        // RPN 0,0 => Pitch Bend Range = 2 semitones
+        let _ = synth.send_event(oxisynth::MidiEvent::ControlChange { channel, ctrl: 101, value: 0 });   // RPN MSB
+        let _ = synth.send_event(oxisynth::MidiEvent::ControlChange { channel, ctrl: 100, value: 0 });   // RPN LSB
+        let _ = synth.send_event(oxisynth::MidiEvent::ControlChange { channel, ctrl: 6, value: 2 });     // Data Entry MSB
+        let _ = synth.send_event(oxisynth::MidiEvent::ControlChange { channel, ctrl: 38, value: 0 });    // Data Entry LSB
+        let _ = synth.send_event(oxisynth::MidiEvent::ControlChange { channel, ctrl: 101, value: 127 }); // RPN Null MSB
+        let _ = synth.send_event(oxisynth::MidiEvent::ControlChange { channel, ctrl: 100, value: 127 }); // RPN Null LSB
+
+        if channel != 9 {
+            let _ = synth.send_event(oxisynth::MidiEvent::ProgramChange { channel, program_id: 0 });
+        }
+    }
 }
 
 fn file_midi_events(
