@@ -336,7 +336,7 @@ fn main() {
         for _ in 0..SAMPLE_TIME {
             let val = recorder.synth.read_next();
             audio_buffer_l.push(val.0);
-            audio_buffer_r.push(val.0);
+            audio_buffer_r.push(val.1);
         }
 
         if audio_buffer_l.len() >= frame_size {
