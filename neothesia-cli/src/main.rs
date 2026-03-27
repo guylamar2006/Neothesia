@@ -52,7 +52,7 @@ fn time_without_lead_in(playback: &midi_file::PlaybackState) -> f32 {
 }
 
 impl Recorder {
-    fn new(args: &cli::Args, sample_rate: f32) -> Self {
+    fn new(args: &cli::Args) -> Self
         let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor::from_env_or_default());
         let gpu = pollster::block_on(Gpu::new(&instance, None)).unwrap_or_else(|err| {
             eprintln!("Failed to initialize GPU: {err}");
@@ -117,7 +117,7 @@ impl Recorder {
         let text = text_renderer_factory.new_renderer();
 
         let mut synth = oxisynth::Synth::new(oxisynth::SynthDescriptor {
-            sample_rate,
+            sample_rate: 44100.0,
             gain: 0.5,
             ..Default::default()
         })
@@ -273,8 +273,9 @@ fn main() {
 
     let args = cli::Args::get();
     
-    let (encoder_info, mut encoder) = ffmpeg_encoder::new(&args.out, args.width, args.height);
-    let mut recorder = Recorder::new(&args, encoder_info.sample_rate as f32);
+    let mut recorder = Recorder::new(&args);
+    let (encoder_info, mut encoder) =
+    ffmpeg_encoder::new(&args.out, recorder.width, recorder.height);
 
     let texture_desc = wgpu::TextureDescriptor {
 
@@ -319,7 +320,7 @@ fn main() {
     let start = std::time::Instant::now();
 
     let frame_time = Duration::from_secs(1) / 60;
-    let sample_time: usize = (encoder_info.sample_rate as usize) / 60;
+    const SAMPLE_TIME: usize = 44100 / 60;
 
     let mut audio_buffer_l: Vec<f32> = Vec::with_capacity(frame_size);
     let mut audio_buffer_r: Vec<f32> = Vec::with_capacity(frame_size);
@@ -332,7 +333,7 @@ fn main() {
         recorder.update(frame_time);
         recorder.render(&texture, view, &texture_desc, &output_buffer);
 
-        for _ in 0..sample_time {
+        for _ in 0..SAMPLE_TIME {
             let val = recorder.synth.read_next();
             audio_buffer_l.push(val.0);
             audio_buffer_r.push(val.0);
