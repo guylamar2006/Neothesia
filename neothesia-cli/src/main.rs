@@ -471,9 +471,11 @@ fn file_midi_events(
             }
 
             MidiMessage::PitchBend { bend } => {
+                let raw_14 = bend.as_int();
+                let value_14 = raw_14.min(0x3FFF) as u16;
                 let _ = synth.send_event(oxisynth::MidiEvent::PitchBend {
                     channel,
-                    value: bend.as_int() as u16,
+                    value: value_14,
                 });
             }
 
