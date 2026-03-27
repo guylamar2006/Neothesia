@@ -52,7 +52,7 @@ fn time_without_lead_in(playback: &midi_file::PlaybackState) -> f32 {
 }
 
 impl Recorder {
-    fn new(args: &cli::Args) -> Self
+    fn new(args: &cli::Args) -> Self {
         let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor::from_env_or_default());
         let gpu = pollster::block_on(Gpu::new(&instance, None)).unwrap_or_else(|err| {
             eprintln!("Failed to initialize GPU: {err}");
@@ -272,13 +272,10 @@ fn main() {
         .init();
 
     let args = cli::Args::get();
-    
+
     let mut recorder = Recorder::new(&args);
-    let (encoder_info, mut encoder) =
-    ffmpeg_encoder::new(&args.out, recorder.width, recorder.height);
 
     let texture_desc = wgpu::TextureDescriptor {
-
         size: wgpu::Extent3d {
             width: recorder.width,
             height: recorder.height,
@@ -314,6 +311,9 @@ fn main() {
         label: None,
         mapped_at_creation: false,
     };
+
+    let (encoder_info, mut encoder) =
+        ffmpeg_encoder::new(&args.out, recorder.width, recorder.height);
 
     let frame_size = encoder_info.frame_size;
 
