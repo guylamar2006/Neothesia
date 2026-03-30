@@ -7,7 +7,7 @@ on:
 
 jobs:
   build_ubuntu:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v6
       - id: Build
@@ -22,7 +22,7 @@ jobs:
         run: gh release upload ${{github.ref_name}} neothesia-ubuntu.zip
 
   build_ubuntu_recorder:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v6
       - id: Build
