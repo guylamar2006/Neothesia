@@ -34,7 +34,7 @@ thiserror = "2.0"
 log = "0.4"
 
 wgpu = "29"
-glyphon = "0.11"
+glyphon = "0.12"
 
 bytes = "1"
 
