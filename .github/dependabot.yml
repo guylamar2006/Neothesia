@@ -1,0 +1,73 @@
+version: 2
+updates:
+  # Root workspace
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "daily"
+
+  # ffmpeg-encoder
+  - package-ecosystem: "cargo"
+    directory: "/ffmpeg-encoder"
+    schedule:
+      interval: "daily"
+
+  # midi-file
+  - package-ecosystem: "cargo"
+    directory: "/midi-file"
+    schedule:
+      interval: "daily"
+
+  # midi-io
+  - package-ecosystem: "cargo"
+    directory: "/midi-io"
+    schedule:
+      interval: "daily"
+
+  # neothesia (main app)
+  - package-ecosystem: "cargo"
+    directory: "/neothesia"
+    schedule:
+      interval: "daily"
+
+  # neothesia-ai
+  - package-ecosystem: "cargo"
+    directory: "/neothesia-ai"
+    schedule:
+      interval: "daily"
+
+  # neothesia-cli
+  - package-ecosystem: "cargo"
+    directory: "/neothesia-cli"
+    schedule:
+      interval: "daily"
+
+  # neothesia-core
+  - package-ecosystem: "cargo"
+    directory: "/neothesia-core"
+    schedule:
+      interval: "daily"
+
+  # neothesia-image
+  - package-ecosystem: "cargo"
+    directory: "/neothesia-image"
+    schedule:
+      interval: "daily"
+
+  # nuon
+  - package-ecosystem: "cargo"
+    directory: "/nuon"
+    schedule:
+      interval: "daily"
+
+  # piano-layout
+  - package-ecosystem: "cargo"
+    directory: "/piano-layout"
+    schedule:
+      interval: "daily"
+
+  # wgpu-jumpstart
+  - package-ecosystem: "cargo"
+    directory: "/wgpu-jumpstart"
+    schedule:
+      interval: "daily"
